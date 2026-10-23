@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Мои Змейки">
+  <title>Мои Змейки — Дневник кормления и линьки</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    }
+    .safe-header {
+      padding-top: max(1rem, calc(env(safe-area-inset-top, 44px) + 0.65rem));
+      padding-bottom: 0.85rem;
+    }
+    .safe-modal {
+      padding-top: max(1.25rem, calc(env(safe-area-inset-top, 44px) + 0.75rem));
+      padding-bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 20px) + 0.75rem));
+    }
+    .ios-card {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .shed-glow {
+      border-color: rgba(245, 158, 11, 0.45);
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(69, 26, 3, 0.35));
+    }
+    .due-glow {
+      border-color: rgba(244, 63, 94, 0.5);
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(76, 5, 25, 0.35));
+    }
+    .ok-glow {
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    /* Hide scrollbar for clean mobile feel */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-24 selection:bg-emerald-500 selection:text-white">
+
+  <!-- Top Header -->
+  <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 safe-header">
+    <div class="max-w-xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-900/40 text-xl">
+          🐍
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white leading-tight">Мои Змейки</h1>
+          <p class="text-xs text-slate-400" id="headerSubtitle">Забота о любимых питомцах</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btnOpenIosGuide" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+          <span>📱</span>
+          <span class="hidden sm:inline">Как поставить на</span> iPhone
+        </button>
+        <button id="btnOpenAddSnake" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-semibold text-xs sm:text-sm transition shadow-lg shadow-emerald-500/20 flex items-center gap-1">
+          <span>＋</span>
+          <span>Добавить</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-xl mx-auto px-4 pt-4 space-y-5">
+
+    <!-- Summary Status Banner -->
+    <section class="grid grid-cols-3 gap-2.5" id="statsGrid">
+      <div class="ios-card rounded-2xl p-3 text-center">
+        <div class="text-xs text-slate-400">Всего змей</div>
+        <div class="text-xl font-bold text-white mt-0.5" id="statTotal">0</div>
+      </div>
+      <div class="ios-card rounded-2xl p-3 text-center">
+        <div class="text-xs text-slate-400">Пора кормить</div>
+        <div class="text-xl font-bold text-rose-400 mt-0.5" id="statDue">0</div>
+      </div>
+      <div class="ios-card rounded-2xl p-3 text-center">
+        <div class="text-xs text-slate-400">В линьке</div>
+        <div class="text-xl font-bold text-amber-400 mt-0.5" id="statShedding">0</div>
+      </div>
+    </section>
+
+    <!-- Filter Tabs -->
+    <div class="flex items-center justify-between gap-2 bg-slate-900/90 p-1 rounded-2xl border border-slate-800">
+      <button data-filter="all" class="filter-tab flex-1 py-2 rounded-xl text-xs font-semibold transition bg-slate-800 text-white">
+        Все (<span id="countAll">0</span>)
+      </button>
+      <button data-filter="due" class="filter-tab flex-1 py-2 rounded-xl text-xs font-semibold transition text-slate-400 hover:text-white">
+        Кормить (<span id="countDue">0</span>)
+      </button>
+      <button data-filter="shedding" class="filter-tab flex-1 py-2 rounded-xl text-xs font-semibold transition text-slate-400 hover:text-white">
+        В линьке (<span id="countShed">0</span>)
+      </button>
+    </div>
+
+    <!-- Snakes List -->
+    <section id="snakesList" class="space-y-3.5"></section>
+
+    <!-- Backup & TG Free Info Section -->
+    <section class="ios-card rounded-2xl p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-white">Резервная копия данных</h2>
+          <p class="text-xs text-slate-400">Данные хранятся прямо в памяти iPhone</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnExportData" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition">
+            Экспорт
+          </button>
+          <button id="btnImportData" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition">
+            Импорт
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Add / Edit Snake Modal -->
+  <div id="snakeModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm px-4 safe-modal overflow-y-auto">
+    <div class="ios-card w-full max-w-md rounded-3xl p-5 space-y-4 border border-slate-700 shadow-2xl my-auto">
+      <div class="flex items-center justify-between">
+        <h2 id="modalTitle" class="text-base font-bold text-white">Добавить змейку</h2>
+        <button id="btnCloseSnakeModal" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">✕</button>
+      </div>
+
+      <form id="snakeForm" class="space-y-3.5">
+        <input type="hidden" id="snakeId">
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Имя змейки *</label>
+          <input type="text" id="snakeName" required placeholder="Введите имя змейки" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Вид змеи *</label>
+          <div class="flex gap-2 mb-1.5 flex-wrap" id="speciesPresets">
+            <button type="button" data-species="Маисовый полоз" data-interval="7" class="species-chip text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Маисовый полоз (7 дн)</button>
+            <button type="button" data-species="Королевский питон" data-interval="10" class="species-chip text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Королевский питон (10 дн)</button>
+            <button type="button" data-species="Удав (Boa constrictor)" data-interval="14" class="species-chip text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Удав (14 дн)</button>
+            <button type="button" data-species="Королевская змея" data-interval="7" class="species-chip text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Королевская змея (7 дн)</button>
+          </div>
+          <input type="text" id="snakeSpecies" required placeholder="Впишите любой вид или морфу" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Интервал кормления (дней) *</label>
+            <input type="number" id="snakeInterval" min="1" max="90" required value="7" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Кормовой объект</label>
+            <input type="text" id="snakePrey" placeholder="Мышь бегунок / крыса" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Дата последнего кормления *</label>
+          <input type="date" id="snakeLastFed" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-semibold text-amber-300">Сейчас в линьке?</div>
+            <div class="text-[11px] text-amber-200/70">Пока змея линяет, кормить её нельзя — напоминание встанет на паузу</div>
+          </div>
+          <input type="checkbox" id="snakeIsShedding" class="w-5 h-5 accent-amber-500 rounded cursor-pointer">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Заметка (по желанию)</label>
+          <input type="text" id="snakeNotes" placeholder="Вес, характер, особенности..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="flex gap-2.5 pt-2">
+          <button type="button" id="btnCancelModal" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition">
+            Отмена
+          </button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition shadow-lg shadow-emerald-500/20">
+            Сохранить
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Shedding Ended Choice Modal -->
+  <div id="shedCompleteModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="ios-card w-full max-w-sm rounded-3xl p-5 space-y-4 border border-amber-500/40 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl">✨</div>
+        <div>
+          <h3 class="text-base font-bold text-white" id="shedModalTitle">С успешной линькой!</h3>
+          <p class="text-xs text-slate-400">Змейка полиняла и снова готова кушать</p>
+        </div>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Как поступить с кормлением? Вы можете покормить её прямо сегодня или назначить кормление на завтра.
+      </p>
+      <div class="space-y-2">
+        <button id="btnShedFeedNow" class="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition">
+          🍽 Уже покормили сегодня (сбросить таймер)
+        </button>
+        <button id="btnShedFeedToday" class="w-full py-2.5 px-4 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 font-semibold text-xs transition">
+          🔔 Назначить кормление на сегодня
+        </button>
+        <button id="btnShedFeedTomorrow" class="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition">
+          📅 Назначить кормление на завтра
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- iPhone Guide & Free Notifications Modal -->
+  <div id="iosGuideModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm px-4 safe-modal overflow-y-auto">
+    <div class="ios-card w-full max-w-md rounded-3xl p-5 space-y-4 border border-slate-700 shadow-2xl my-auto">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white">📱 Как установить на iPhone бесплатно</h3>
+        <button id="btnCloseIosGuide" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <div class="font-semibold text-emerald-400 mb-1">1. Иконка на экран «Домой» (работает без интернета)</div>
+          <p>Откройте этот файл в <b>Safari</b> на iPhone → нажмите кнопку <b>«Поделиться»</b> (квадрат со стрелкой вверх внизу) → выберите <b>«На экран „Домой“»</b>. Приложение появится на рабочем столе как обычная программа!</p>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <div class="font-semibold text-amber-400 mb-1">2. Уведомления на iPhone в 1 тап</div>
+          <p>На карточке каждой змейки есть кнопка <b>«📅 В календарь iPhone»</b>. При нажатии айфон сам создаёт напоминание со звуком ровно на день следующего кормления (а если змея в линьке — предупреждает, что сначала нужно дождаться конца линьки).</p>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <div class="font-semibold text-sky-400 mb-1">3. Секрет: бесплатный Telegram-бот 24/7 без серверов</div>
+          <p>Если вы всё же захотите Telegram-бота с авто-уведомлениями 24/7 за <b>0 рублей и без банковской карты</b>, его можно сделать через <b>Google Таблицы + Google Apps Script</b>! У Google есть встроенный бесплатный таймер (Triggers), который работает вечно на серверах Google и раз в день проверяет таблицу со змеями и шлёт сообщение вашей девушке в Telegram.</p>
+        </div>
+      </div>
+
+      <button id="btnGotItIosGuide" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition">
+        Понятно, супер!
+      </button>
+    </div>
+  </div>
+
+  <!-- Import/Export Modal -->
+  <div id="backupModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="ios-card w-full max-w-md rounded-3xl p-5 space-y-3 border border-slate-700 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 id="backupModalTitle" class="text-base font-bold text-white">Резервная копия</h3>
+        <button id="btnCloseBackupModal" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">✕</button>
+      </div>
+      <p id="backupModalDesc" class="text-xs text-slate-400">Скопируйте этот код для сохранения или вставьте ранее сохранённый код:</p>
+      <textarea id="backupTextarea" rows="5" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500"></textarea>
+      <div class="flex gap-2">
+        <button id="btnCopyBackup" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
+          Скопировать
+        </button>
+        <button id="btnApplyImport" class="flex-1 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition hidden">
+          Загрузить данные
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2.5 rounded-2xl bg-slate-800/95 border border-slate-600 text-white text-xs font-medium shadow-xl"></div>
+
+  <script>
+    const STORAGE_KEY = 'snake_care_app_v2';
+    let currentFilter = 'all';
+    let activeShedSnakeId = null;
+
+    function getTodayStr() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function addDaysStr(dateStr, days) {
+      const parts = dateStr.split('-').map(Number);
+      const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+      dt.setDate(dt.getDate() + Number(days));
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const d = String(dt.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function diffDaysFromToday(targetDateStr) {
+      const todayParts = getTodayStr().split('-').map(Number);
+      const targetParts = targetDateStr.split('-').map(Number);
+      const t0 = new Date(todayParts[0], todayParts[1] - 1, todayParts[2]).getTime();
+      const t1 = new Date(targetParts[0], targetParts[1] - 1, targetParts[2]).getTime();
+      return Math.round((t1 - t0) / (1000 * 60 * 60 * 24));
+    }
+
+    function formatRussianDate(dateStr) {
+      if (!dateStr) return '—';
+      const parts = dateStr.split('-').map(Number);
+      const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+      return `${parts[2]} ${months[parts[1] - 1]}`;
+    }
+
+    const defaultSnakes = [];
+
+    let snakes = [];
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          snakes = JSON.parse(raw);
+        } else {
+          snakes = defaultSnakes;
+          saveData();
+        }
+      } catch (e) {
+        snakes = [...defaultSnakes];
+      }
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snakes));
+      } catch (e) {
+        // Fallback if storage restricted
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2800);
+    }
+
+    function getNextFeedDate(snake) {
+      if (snake.customNextFeed) {
+        return snake.customNextFeed;
+      }
+      return addDaysStr(snake.lastFed, snake.intervalDays);
+    }
+
+    function getSnakeStatus(snake) {
+      const nextDate = getNextFeedDate(snake);
+      const daysLeft = diffDaysFromToday(nextDate);
+
+      if (snake.isShedding) {
+        return {
+          code: 'shedding',
+          badgeText: 'В линьке — кормить нельзя!',
+          badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+          cardClass: 'shed-glow',
+          daysLeft,
+          nextDate,
+          subText: daysLeft <= 0
+            ? 'По графику пора кормить, но ждём окончания линьки'
+            : `Кормление на паузе (план был на ${formatRussianDate(nextDate)})`
+        };
+      }
+
+      if (daysLeft < 0) {
+        return {
+          code: 'due',
+          badgeText: `Просрочено на ${Math.abs(daysLeft)} дн.`,
+          badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+          cardClass: 'due-glow',
+          daysLeft,
+          nextDate,
+          subText: `Нужно было покормить ${formatRussianDate(nextDate)}`
+        };
+      }
+
+      if (daysLeft === 0) {
+        return {
+          code: 'due',
+          badgeText: 'Кормить сегодня!',
+          badgeClass: 'bg-rose-500/25 text-rose-200 border-rose-500/50 animate-pulse',
+          cardClass: 'due-glow',
+          daysLeft,
+          nextDate,
+          subText: `Сегодня день кормления (${formatRussianDate(nextDate)})`
+        };
+      }
+
+      if (daysLeft === 1) {
+        return {
+          code: 'soon',
+          badgeText: 'Кормить завтра',
+          badgeClass: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+          cardClass: 'ok-glow',
+          daysLeft,
+          nextDate,
+          subText: `Следующее кормление завтра (${formatRussianDate(nextDate)})`
+        };
+      }
+
+      return {
+        code: 'ok',
+        badgeText: `Через ${daysLeft} дн.`,
+        badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+        cardClass: 'ok-glow',
+        daysLeft,
+        nextDate,
+        subText: `Следующее кормление: ${formatRussianDate(nextDate)}`
+      };
+    }
+
+    function downloadIcsReminder(snake) {
+      if (snake.isShedding) {
+        showToast('Змейка сейчас в линьке! Добавьте напоминание после того, как она полиняет.');
+        return;
+      }
+      const nextDate = getNextFeedDate(snake);
+      const dateCompact = nextDate.replace(/-/g, '');
+      const title = `🐍 Покормить змею: ${snake.name} (${snake.species})`;
+      const desc = `Корм: ${snake.prey || 'по рациону'}. Проверьте, не началась ли линька перед кормлением!`;
+
+      const icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//SnakeCare//RU',
+        'BEGIN:VEVENT',
+        `DTSTART;VALUE=DATE:${dateCompact}`,
+        `DTEND;VALUE=DATE:${dateCompact}`,
+        `SUMMARY:${title}`,
+        `DESCRIPTION:${desc}`,
+        'BEGIN:VALARM',
+        'TRIGGER:PT10H',
+        'ACTION:DISPLAY',
+        `DESCRIPTION:${title}`,
+        'END:VALARM',
+        'END:VEVENT',
+        'END:VCALENDAR'
+      ].join('\r\n');
+
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `feed-${snake.name}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Файл календаря для «${snake.name}» создан!`);
+    }
+
+    function render() {
+      const listEl = document.getElementById('snakesList');
+      listEl.innerHTML = '';
+
+      let dueCount = 0;
+      let shedCount = 0;
+
+      snakes.forEach(s => {
+        const st = getSnakeStatus(s);
+        if (st.code === 'due') dueCount++;
+        if (s.isShedding) shedCount++;
+      });
+
+      document.getElementById('statTotal').textContent = snakes.length;
+      document.getElementById('statDue').textContent = dueCount;
+      document.getElementById('statShedding').textContent = shedCount;
+
+      document.getElementById('countAll').textContent = snakes.length;
+      document.getElementById('countDue').textContent = dueCount;
+      document.getElementById('countShed').textContent = shedCount;
+
+      const filtered = snakes.filter(s => {
+        const st = getSnakeStatus(s);
+        if (currentFilter === 'due') return st.code === 'due';
+        if (currentFilter === 'shedding') return s.isShedding;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="ios-card rounded-3xl p-8 text-center space-y-2">
+            <div class="text-3xl">🐍</div>
+            <div class="text-sm font-semibold text-white">В этом списке пока пусто</div>
+            <p class="text-xs text-slate-400">Добавьте свою первую змейку кнопкой «＋ Добавить» сверху.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(snake => {
+        const st = getSnakeStatus(snake);
+        const card = document.createElement('div');
+        card.className = `ios-card ${st.cardClass} rounded-3xl p-4 space-y-3.5 transition`;
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="text-base font-bold text-white">${escapeHtml(snake.name)}</h3>
+                <span class="text-[11px] px-2.5 py-0.5 rounded-full border font-semibold ${st.badgeClass}">
+                  ${st.badgeText}
+                </span>
+              </div>
+              <div class="text-xs text-slate-300 mt-0.5 font-medium">${escapeHtml(snake.species)}</div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button data-action="edit" data-id="${snake.id}" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs" title="Редактировать">
+                ✏️
+              </button>
+              <button data-action="delete" data-id="${snake.id}" class="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-950/80 text-slate-400 hover:text-rose-300 text-xs" title="Удалить">
+                🗑
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 bg-slate-900/70 rounded-2xl p-3 border border-slate-800/80 text-xs">
+            <div>
+              <div class="text-slate-400 text-[11px]">Последнее кормление</div>
+              <div class="font-semibold text-slate-200 mt-0.5">${formatRussianDate(snake.lastFed)} (раз в ${snake.intervalDays} дн.)</div>
+            </div>
+            <div>
+              <div class="text-slate-400 text-[11px]">Кормовой объект</div>
+              <div class="font-semibold text-slate-200 mt-0.5">${escapeHtml(snake.prey || 'Не указан')}</div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs px-1">
+            <span class="text-slate-300">${st.subText}</span>
+          </div>
+
+          ${snake.notes ? `<div class="text-xs text-slate-400 bg-slate-900/40 px-3 py-2 rounded-xl border border-slate-800/50">💬 ${escapeHtml(snake.notes)}</div>` : ''}
+
+          <!-- Action Buttons -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            ${snake.isShedding ? `
+              <button data-action="feed-disabled" data-id="${snake.id}" class="py-2.5 px-3 rounded-xl bg-slate-800/60 text-slate-500 font-semibold text-xs border border-slate-700/50 cursor-not-allowed">
+                🚫 В линьке не кормим
+              </button>
+              <button data-action="toggle-shed" data-id="${snake.id}" class="py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-amber-500/20">
+                ✨ Полиняла! (Завершить)
+              </button>
+            ` : `
+              <button data-action="feed" data-id="${snake.id}" class="py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold text-xs transition shadow-lg shadow-emerald-500/20">
+                🍽 Покормили сегодня
+              </button>
+              <button data-action="toggle-shed" data-id="${snake.id}" class="py-2.5 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs transition">
+                🐍 Началась линька
+              </button>
+            `}
+          </div>
+
+          <div class="flex items-center justify-between pt-1 border-t border-slate-800/80">
+            <button data-action="ics" data-id="${snake.id}" class="text-[11px] font-medium text-sky-400 hover:text-sky-300 flex items-center gap-1">
+              <span>📅 В календарь iPhone</span>
+            </button>
+            <span class="text-[11px] text-slate-500">
+              ${snake.history && snake.history.length > 0 ? `Кормлений в истории: ${snake.history.length}` : 'Нет записей в истории'}
+            </span>
+          </div>
+        `;
+
+        listEl.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Event Delegation for Snake Cards
+    document.getElementById('snakesList').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      const snake = snakes.find(s => s.id === id);
+      if (!snake) return;
+
+      if (action === 'feed-disabled') {
+        showToast('Змейка сейчас в линьке! Кормить во время линьки нельзя.');
+        return;
+      }
+
+      if (action === 'feed') {
+        snake.lastFed = getTodayStr();
+        snake.customNextFeed = null;
+        snake.history = snake.history || [];
+        snake.history.unshift({ type: 'fed', date: getTodayStr() });
+        saveData();
+        render();
+        showToast(`Отлично! Записали кормление для «${snake.name}» 🐍`);
+      } else if (action === 'toggle-shed') {
+        if (!snake.isShedding) {
+          snake.isShedding = true;
+          snake.shedStartDate = getTodayStr();
+          saveData();
+          render();
+          showToast(`Статус «В линьке» включён для «${snake.name}». Кормление на паузе.`);
+        } else {
+          activeShedSnakeId = snake.id;
+          document.getElementById('shedModalTitle').textContent = `${snake.name} полиняла! ✨`;
+          document.getElementById('shedCompleteModal').classList.remove('hidden');
+          document.getElementById('shedCompleteModal').classList.add('flex');
+        }
+      } else if (action === 'edit') {
+        openSnakeModal(snake);
+      } else if (action === 'delete') {
+        snakes = snakes.filter(s => s.id !== id);
+        saveData();
+        render();
+        showToast(`Профиль «${snake.name}» удалён`);
+      } else if (action === 'ics') {
+        downloadIcsReminder(snake);
+      }
+    });
+
+    // Shed complete modal buttons
+    function finishShedding(mode) {
+      const snake = snakes.find(s => s.id === activeShedSnakeId);
+      if (!snake) return;
+      snake.isShedding = false;
+      snake.shedStartDate = null;
+      if (mode === 'fed_now') {
+        snake.lastFed = getTodayStr();
+        snake.customNextFeed = null;
+        showToast(`Полиняла и покушала! Таймер для «${snake.name}» обновлён.`);
+      } else if (mode === 'feed_today') {
+        snake.customNextFeed = getTodayStr();
+        showToast(`Линька завершена! Кормление «${snake.name}» назначено на сегодня.`);
+      } else if (mode === 'feed_tomorrow') {
+        snake.customNextFeed = addDaysStr(getTodayStr(), 1);
+        showToast(`Линька завершена! Кормление «${snake.name}» назначено на завтра.`);
+      }
+      saveData();
+      render();
+      document.getElementById('shedCompleteModal').classList.add('hidden');
+      document.getElementById('shedCompleteModal').classList.remove('flex');
+      activeShedSnakeId = null;
+    }
+
+    document.getElementById('btnShedFeedNow').addEventListener('click', () => finishShedding('fed_now'));
+    document.getElementById('btnShedFeedToday').addEventListener('click', () => finishShedding('feed_today'));
+    document.getElementById('btnShedFeedTomorrow').addEventListener('click', () => finishShedding('feed_tomorrow'));
+
+    // Filter Tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        currentFilter = tab.dataset.filter;
+        document.querySelectorAll('.filter-tab').forEach(t => {
+          t.className = 'filter-tab flex-1 py-2 rounded-xl text-xs font-semibold transition text-slate-400 hover:text-white';
+        });
+        tab.className = 'filter-tab flex-1 py-2 rounded-xl text-xs font-semibold transition bg-slate-800 text-white';
+        render();
+      });
+    });
+
+    // Add / Edit Modal Logic
+    function openSnakeModal(snake = null) {
+      const modal = document.getElementById('snakeModal');
+      document.getElementById('modalTitle').textContent = snake ? 'Редактировать змейку' : 'Добавить змейку';
+      document.getElementById('snakeId').value = snake ? snake.id : '';
+      document.getElementById('snakeName').value = snake ? snake.name : '';
+      document.getElementById('snakeSpecies').value = snake ? snake.species : '';
+      document.getElementById('snakeInterval').value = snake ? snake.intervalDays : 7;
+      document.getElementById('snakePrey').value = snake ? (snake.prey || '') : '';
+      document.getElementById('snakeLastFed').value = snake ? snake.lastFed : getTodayStr();
+      document.getElementById('snakeIsShedding').checked = snake ? !!snake.isShedding : false;
+      document.getElementById('snakeNotes').value = snake ? (snake.notes || '') : '';
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeSnakeModal() {
+      const modal = document.getElementById('snakeModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    document.getElementById('btnOpenAddSnake').addEventListener('click', () => openSnakeModal(null));
+    document.getElementById('btnCloseSnakeModal').addEventListener('click', closeSnakeModal);
+    document.getElementById('btnCancelModal').addEventListener('click', closeSnakeModal);
+
+    document.querySelectorAll('.species-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.getElementById('snakeSpecies').value = chip.dataset.species;
+        document.getElementById('snakeInterval').value = chip.dataset.interval;
+      });
+    });
+
+    document.getElementById('snakeForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('snakeId').value;
+      const name = document.getElementById('snakeName').value.trim();
+      const species = document.getElementById('snakeSpecies').value.trim();
+      const intervalDays = Math.max(1, parseInt(document.getElementById('snakeInterval').value, 10) || 7);
+      const prey = document.getElementById('snakePrey').value.trim();
+      const lastFed = document.getElementById('snakeLastFed').value || getTodayStr();
+      const isShedding = document.getElementById('snakeIsShedding').checked;
+      const notes = document.getElementById('snakeNotes').value.trim();
+
+      if (id) {
+        const existing = snakes.find(s => s.id === id);
+        if (existing) {
+          existing.name = name;
+          existing.species = species;
+          existing.intervalDays = intervalDays;
+          existing.prey = prey;
+          existing.lastFed = lastFed;
+          existing.isShedding = isShedding;
+          existing.notes = notes;
+          existing.customNextFeed = null;
+        }
+        showToast(`Изменения для «${name}» сохранены`);
+      } else {
+        snakes.unshift({
+          id: 'snake-' + Date.now(),
+          name,
+          species,
+          intervalDays,
+          prey,
+          lastFed,
+          customNextFeed: null,
+          isShedding,
+          shedStartDate: isShedding ? getTodayStr() : null,
+          notes,
+          history: []
+        });
+        showToast(`Змейка «${name}» добавлена!`);
+      }
+
+      saveData();
+      render();
+      closeSnakeModal();
+    });
+
+    // iOS Guide Modal
+    const iosGuideModal = document.getElementById('iosGuideModal');
+    document.getElementById('btnOpenIosGuide').addEventListener('click', () => {
+      iosGuideModal.classList.remove('hidden');
+      iosGuideModal.classList.add('flex');
+    });
+    document.getElementById('btnCloseIosGuide').addEventListener('click', () => {
+      iosGuideModal.classList.add('hidden');
+      iosGuideModal.classList.remove('flex');
+    });
+    document.getElementById('btnGotItIosGuide').addEventListener('click', () => {
+      iosGuideModal.classList.add('hidden');
+      iosGuideModal.classList.remove('flex');
+    });
+
+    // Backup Export / Import Modal
+    const backupModal = document.getElementById('backupModal');
+    const backupTextarea = document.getElementById('backupTextarea');
+    const btnApplyImport = document.getElementById('btnApplyImport');
+    const btnCopyBackup = document.getElementById('btnCopyBackup');
+
+    document.getElementById('btnExportData').addEventListener('click', () => {
+      document.getElementById('backupModalTitle').textContent = 'Экспорт данных';
+      backupTextarea.value = JSON.stringify(snakes);
+      btnApplyImport.classList.add('hidden');
+      btnCopyBackup.classList.remove('hidden');
+      backupModal.classList.remove('hidden');
+      backupModal.classList.add('flex');
+    });
+
+    document.getElementById('btnImportData').addEventListener('click', () => {
+      document.getElementById('backupModalTitle').textContent = 'Импорт данных';
+      backupTextarea.value = '';
+      backupTextarea.placeholder = 'Вставьте сюда скопированный код...';
+      btnCopyBackup.classList.add('hidden');
+      btnApplyImport.classList.remove('hidden');
+      backupModal.classList.remove('hidden');
+      backupModal.classList.add('flex');
+    });
+
+    document.getElementById('btnCloseBackupModal').addEventListener('click', () => {
+      backupModal.classList.add('hidden');
+      backupModal.classList.remove('flex');
+    });
+
+    btnCopyBackup.addEventListener('click', () => {
+      backupTextarea.select();
+      try {
+        document.execCommand('copy');
+        showToast('Код скопирован в буфер обмена!');
+      } catch (e) {
+        showToast('Выделите и скопируйте текст вручную');
+      }
+    });
+
+    btnApplyImport.addEventListener('click', () => {
+      try {
+        const parsed = JSON.parse(backupTextarea.value.trim());
+        if (Array.isArray(parsed)) {
+          snakes = parsed;
+          saveData();
+          render();
+          backupModal.classList.add('hidden');
+          backupModal.classList.remove('flex');
+          showToast('Данные успешно загружены!');
+        } else {
+          showToast('Неверный формат данных');
+        }
+      } catch (e) {
+        showToast('Ошибка чтения кода: проверьте скопированный текст');
+      }
+    });
+
+    // Init
+    loadData();
+    render();
+  </script>
+</body>
+</html>
